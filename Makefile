@@ -13,30 +13,27 @@ help:
 	@echo  '  run-cluster     - Run a task on a cluster.'
 	@echo  '  clean           - Clean auxiliary files.'
 
+_remove_venv:
+	@rm -rf .venv
+
 setup:
-	pip install poetry
-	poetry config virtualenvs.in-project true --local
-	poetry install
+	@python3 -m pip install poetry
+	@poetry config virtualenvs.in-project true --local
+	@poetry install
+
+clean_setup: _remove_venv setup
 
 build:
-	# Can't use `poetry build`: we need to package the whole venv with all dependencies.
-	rm -rf deps && \
-	mkdir deps && \
-	python -m venv .venv_build && \
-	source .venv_build/bin/activate && \
-	pip install venv-pack==0.2.0 . && \
-	venv-pack -o deps/environment.tar.gz && \
-	cp spark_movies_etl/main.py deps && \
-	rm -r .venv_build
+	@poetry build
 
 test:
-	poetry run pytest --cov -vvvv --showlocals --disable-warnings tests
+	@poetry run pytest --cov -vvvv --showlocals --disable-warnings tests
 
 pre-commit:
-	poetry run pre-commit run --all-files
+	@poetry run pre-commit run --all-files
 
 run-local:
-	poetry run spark-submit \
+	@poetry run spark-submit \
 	--master local[*] \
 	--packages org.apache.spark:spark-avro_2.12:3.1.2,io.delta:delta-core_2.12:1.0.0 \
 	--conf spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension \
@@ -58,4 +55,4 @@ run-cluster:
 	--execution-date ${execution-date}
 
 clean:
-	rm -rf deps/ .pytest_cache .mypy_cache spark_movies_etl.egg-info *.xml .coverage
+	@rm -rf deps/ .pytest_cache .mypy_cache spark_movies_etl.egg-info *.xml .coverage dist
